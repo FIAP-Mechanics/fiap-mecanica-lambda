@@ -80,14 +80,32 @@ Testes: `npm ci && npm run typecheck && npm test` (cobertura mínima de 80%).
 - `deploy.yml` também publica a imagem no GHCR (`ghcr.io/fiap-mechanics/mecanica-auth-cpf:<sha>` e `:latest`). O repositório da
   aplicação a usa no Docker Compose e no kind, onde a mesma imagem roda com o Runtime Interface Emulator.
 
+### Configurar os Environments do GitHub
+
+Os Environments `homologacao` e `producao` deste repositório são independentes dos Environments com o mesmo nome em
+`fiap-mecanica`. Antes de executar [Deploy](.github/workflows/deploy.yml), confira em **Settings > Environments > ambiente**:
+
+- **Secrets obrigatórios:** `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`, `AUTH_CPF_DB_PASSWORD` e `JWT_SECRET`.
+- **Variable obrigatória:** `TF_STATE_BUCKET`, com o mesmo bucket usado pelos outros três repositórios. `AWS_REGION` é opcional
+  e usa `us-east-1` por padrão.
+
+No mesmo ambiente, `AUTH_CPF_DB_PASSWORD` e `JWT_SECRET` precisam ter os mesmos valores em `fiap-mecanica-lambda` e
+`fiap-mecanica`. Em produção existente, preserve os valores atuais; alterar somente um lado interrompe a autenticação.
+Credenciais AWS do Learner Lab expiram e precisam ser atualizadas neste Environment a cada nova sessão. Depois de concluir
+os deploys de Kubernetes e RDS, abra **Actions > Deploy > Run workflow** e selecione `homologacao` ou `main`.
+
+O [guia de deploy dos quatro repositórios](https://github.com/FIAP-Mechanics/fiap-mecanica/blob/main/DEPLOY.md) traz a tabela
+completa de secrets, a ordem de execução e o diagnóstico das falhas já observadas.
+
 ### Ordem de provisionamento
 Os repositórios se ligam por state remoto no S3, então a ordem importa: `fiap-mecanica-k8s-infra` → `fiap-mecanica-infra-dbs` →
 **`fiap-mecanica-lambda`** → `fiap-mecanica` (aplicação). Este repositório lê `infra-k8s` e `infra-db`; para destruir, siga a ordem
 inversa. O Kong (repositório da aplicação) invoca a função `mecanica-auth-cpf-<ambiente>`.
 
 ### Branches e proteção
-`homologacao` publica em homologação e `main` em produção (Environment `producao` com aprovação). `main` é protegida: sem commit direto
-e com pull request obrigatório. O usuário `soat-architecture` tem acesso de leitura.
+`homologacao` publica em homologação e `main` em produção (Environment `producao` com aprovação). As duas branches são
+protegidas: sem commit direto, com pull request, aprovação e checks de CI obrigatórios. O convite de colaboração de
+`soat-architecture` precisa ser aceito antes da entrega.
 
 ## Dockerfile
 [`Dockerfile`](Dockerfile): imagem de AWS Lambda para Node.js 22, a mesma usada no ECR (deploy) e no GHCR (execução local).
