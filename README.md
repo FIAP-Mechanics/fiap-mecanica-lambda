@@ -94,8 +94,8 @@ No mesmo ambiente, `AUTH_CPF_DB_PASSWORD` e `JWT_SECRET` precisam ter os mesmos 
 Credenciais AWS do Learner Lab expiram e precisam ser atualizadas neste Environment a cada nova sessão. Depois de concluir
 os deploys de Kubernetes e RDS, abra **Actions > Deploy > Run workflow** e selecione `homologacao` ou `main`.
 
-O [guia de deploy dos quatro repositórios](https://github.com/FIAP-Mechanics/fiap-mecanica/blob/main/DEPLOY.md) traz a tabela
-completa de secrets, a ordem de execução e o diagnóstico das falhas já observadas.
+O [README da aplicação](https://github.com/FIAP-Mechanics/fiap-mecanica#deploy-na-aws-aws-academy) reúne a tabela de secrets
+dos quatro repositórios, a ordem de execução e o diagnóstico das falhas já observadas.
 
 ### Ordem de provisionamento
 Os repositórios se ligam por state remoto no S3, então a ordem importa: `fiap-mecanica-k8s-infra` → `fiap-mecanica-infra-dbs` →
