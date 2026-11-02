@@ -3,6 +3,8 @@
 Function serverless de autenticação por CPF da Oficina Mecânica. Valida o CPF, consulta a existência e o status do cliente
 na base e devolve um JWT para consumir as APIs protegidas (por exemplo, `GET /atendimento/cliente/minhas`).
 
+**APIs:** [collection Postman](https://github.com/FIAP-Mechanics/fiap-mecanica/blob/main/postman/mecanica-completa.postman_collection.json) · [OpenAPI da Lambda](openapi.yaml).
+
 ## Tecnologias
 Node.js 22 e TypeScript, `pg`, `jose` (JWT HS256), esbuild, vitest, imagem de AWS Lambda (`public.ecr.aws/lambda/nodejs:22`),
 Terraform (AWS: Lambda, ECR, Secrets Manager, LabRole), GitHub Actions.
@@ -22,6 +24,18 @@ Terraform (AWS: Lambda, ECR, Secrets Manager, LabRole), GitHub Actions.
 
 Claims do token: `iss` (`JWT_ISSUER`), `sub` e `cliente_id` (id do cliente), `roles: ["CLIENTE"]`, `iat`, `exp`. O
 `JWT_SECRET` e o `iss` precisam ser os mesmos do Kong e dos serviços.
+
+## Arquitetura
+
+```mermaid
+flowchart LR
+    cliente[Cliente] --> kong[Kong]
+    kong --> lambda[Lambda auth-cpf]
+    lambda --> rds[(RDS: view do cliente)]
+    lambda --> secrets[AWS Secrets Manager]
+    actions[GitHub Actions] --> ecr[Amazon ECR]
+    ecr --> lambda
+```
 
 ```mermaid
 sequenceDiagram
@@ -74,7 +88,9 @@ Testes: `npm ci && npm run typecheck && npm test` (cobertura mínima de 80%).
 - `.github/workflows/ci.yml`: em pull requests, typecheck, testes, build da imagem e `terraform validate`.
 - `.github/workflows/deploy.yml`: push em `homologacao` publica em homologação; push em `main` publica em produção.
   Usa as credenciais temporárias do Learner Lab (secrets `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`,
-  renovados a cada sessão), a variável `TF_STATE_BUCKET` e os secrets `AUTH_CPF_DB_PASSWORD` e `JWT_SECRET`.
+  renovados a cada sessão), a variable `TF_STATE_BUCKET` e os secrets `AUTH_CPF_DB_PASSWORD` e `JWT_SECRET`. Configure-os em
+  `Settings > Environments > homologacao` ou `producao` deste repositório. A senha e o JWT devem coincidir com os do mesmo
+  Environment da aplicação.
 - O Kong invoca a function com as credenciais da `LabRole` dos nós do EKS (sem chaves no Secret).
 
 - `deploy.yml` também publica a imagem no GHCR (`ghcr.io/fiap-mechanics/mecanica-auth-cpf:<sha>` e `:latest`). O repositório da
@@ -92,13 +108,10 @@ e com pull request obrigatório. O usuário `soat-architecture` tem acesso de le
 ## Dockerfile
 [`Dockerfile`](Dockerfile): imagem de AWS Lambda para Node.js 22, a mesma usada no ECR (deploy) e no GHCR (execução local).
 
-## Documentação da API
-- Swagger/OpenAPI: [`openapi.yaml`](openapi.yaml).
-- Postman: [`mecanica-completa.postman_collection.json`](https://github.com/FIAP-Mechanics/fiap-mecanica/blob/main/postman/mecanica-completa.postman_collection.json)
-  no repositório da aplicação (pasta "00 - Autenticação", requisição "Login por CPF").
-
 ## Deploys ativos
 | Ambiente | Função | Gateway |
 |---|---|---|
-| Homologação | `mecanica-auth-cpf-homologacao` (us-east-1) | _preencher após o deploy_ |
-| Produção | `mecanica-auth-cpf-producao` (us-east-1) | _preencher após o deploy_ |
+| Homologação | Não confirmado | Não confirmado |
+| Produção | Não confirmado | Não confirmado |
+
+Consulte os [deploys no GitHub Actions](https://github.com/FIAP-Mechanics/fiap-mecanica-lambda/actions/workflows/deploy.yml).
